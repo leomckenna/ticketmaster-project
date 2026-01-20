@@ -142,6 +142,3 @@ This project also includes a deployed interactive R Shiny dashboard for explorin
 
 Live App: https://leomckenna.shinyapps.io/ticketmaster-api-dashboard/
 
-
-## Author
-Leo McKenna, Jill Cusick, Pengyun Wang, Xinyue Yan
