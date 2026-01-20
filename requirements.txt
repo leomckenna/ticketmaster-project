@@ -1,0 +1,10 @@
+pandas>=2.0
+requests>=2.31
+pyarrow>=15
+fastparquet
+numpy
+matplotlib
+plotly
+ipywidgets
+seaborn
+jupyter
