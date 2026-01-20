@@ -1,0 +1,13 @@
+.venv
+.env
+.venv/
+.env/
+venv
+env
+
+data/transformed_data/*.csv
+events.db
+
+Final Project.ipynb
+view_data_csv.py
+data/events_history.csv
