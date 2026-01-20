@@ -1,0 +1,81 @@
+name: Ticketmaster Daily Snapshot
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 7 * * *"
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - "ticketmaster_snapshot.py"
+  #     - "requirements.txt"
+  #     - ".github/workflows/tm_snapshot.yml"
+  #     - "data/**"
+
+jobs:
+  run-snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure data dir exists (first run)
+        run: mkdir -p data && touch data/.gitkeep
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -V
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Check secret is set (fail early if missing)
+        id: check-secret
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os, sys
+          has = bool(os.getenv("TICKETMASTER_API_KEY"))
+          print("Has TICKETMASTER_API_KEY:", has)
+          sys.exit(0 if has else 2)
+          PY
+
+      - name: Verify parquet engine
+        run: |
+          python - <<'PY'
+          import importlib, sys
+          ok = False
+          for m in ("pyarrow","fastparquet"):
+            try:
+              importlib.import_module(m)
+              print("Parquet engine OK:", m)
+              ok = True
+              break
+            except Exception as e:
+              print("Parquet engine not available:", m, e)
+          sys.exit(0 if ok else 3)
+          PY
+
+      - name: Run snapshot
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+        run: |
+          python -u ticketmaster_snapshot.py
+
+      - name: Configure git user (required to commit)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit & push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: daily Ticketmaster snapshot"
+          file_pattern: data/events_history.parquet data/.gitkeep
